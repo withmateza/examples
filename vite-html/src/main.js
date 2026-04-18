@@ -2,13 +2,13 @@ import { createWebsiteTranslator } from '@withmateza/website'
 import './style.css'
 
 const app = document.querySelector('#app')
-const apiHost = import.meta.env.VITE_MATEZA_BASE_URL?.trim() ?? ''
-const clientKey = import.meta.env.VITE_MATEZA_CLIENT_KEY?.trim() ?? ''
-const projectId = import.meta.env.VITE_MATEZA_PROJECT_ID?.trim() ?? ''
 const sourceLang = 'en'
 const targetLang = 'rw'
-const isLocalPreview = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname)
-const baseUrl = isLocalPreview ? '/mateza-api' : apiHost
+const runtimeEnv = globalThis.window?.__MATEZA_ENV__ ?? {}
+const baseUrl = '/mateza-api'
+const clientKey = (runtimeEnv.VITE_MATEZA_CLIENT_KEY ?? import.meta.env.VITE_MATEZA_CLIENT_KEY ?? '').trim()
+const projectId = (runtimeEnv.VITE_MATEZA_PROJECT_ID ?? import.meta.env.VITE_MATEZA_PROJECT_ID ?? '').trim()
+const apiHost = (runtimeEnv.VITE_MATEZA_BASE_URL ?? import.meta.env.VITE_MATEZA_BASE_URL ?? '').trim()
 
 app.innerHTML = `
   <div class="shell">

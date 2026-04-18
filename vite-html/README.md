@@ -38,21 +38,25 @@ pnpm dev
 
 ## Docker
 
-From the repository root, build and run the app in a container with the Mateza credentials passed at build time:
+From the repository root, build the image once and pass the Mateza credentials as runtime environment variables:
 
 ```bash
 docker build \
   -t mateza-vite-html \
   -f vite-html/Dockerfile \
-  --build-arg VITE_MATEZA_BASE_URL=https://api.mateza.us \
-  --build-arg VITE_MATEZA_CLIENT_KEY=your_browser_client_key \
-  --build-arg VITE_MATEZA_PROJECT_ID=your_project_id \
   .
 
-docker run --rm -p 3000:3000 mateza-vite-html
+docker run --rm -p 3000:3000 \
+  -e VITE_MATEZA_BASE_URL=https://api.mateza.us \
+  -e VITE_MATEZA_CLIENT_KEY=your_browser_client_key \
+  -e VITE_MATEZA_PROJECT_ID=your_project_id \
+  mateza-vite-html
 ```
 
 Open `http://localhost:3000` after the container starts.
+
+In Dokploy, set the same three `VITE_MATEZA_*` variables in the deployment environment.
+The container entrypoint writes them into `dist/env.js` before Vite preview starts.
 
 ## Vite proxy
 
