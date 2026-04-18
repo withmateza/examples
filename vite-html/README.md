@@ -36,6 +36,23 @@ Use a browser client key here, not a server API key.
 pnpm dev
 ```
 
+## Docker
+
+Build and run the app in a container with the Mateza credentials passed at build time:
+
+```bash
+docker build \
+  -t mateza-vite-html \
+  --build-arg VITE_MATEZA_BASE_URL=https://api.mateza.us \
+  --build-arg VITE_MATEZA_CLIENT_KEY=your_browser_client_key \
+  --build-arg VITE_MATEZA_PROJECT_ID=your_project_id \
+  .
+
+docker run --rm -p 4173:4173 mateza-vite-html
+```
+
+Open `http://localhost:4173` after the container starts.
+
 ## Vite proxy
 
 The demo routes browser requests through `/mateza-api` in local development.
@@ -131,4 +148,3 @@ That keeps the example simple and avoids the batch endpoint.
 - If you see CORS errors, make sure the app is using the local `/mateza-api` proxy path.
 - If Mateza returns `404` or `401`, the client key or project ID is probably invalid for the configured API host.
 - After changing `vite.config.js`, restart `pnpm dev`.
-
