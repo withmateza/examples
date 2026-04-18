@@ -148,4 +148,5 @@ That keeps the example simple and avoids the batch endpoint.
 - If translation does not start, check that all three `VITE_MATEZA_*` variables are set.
 - If you see CORS errors, make sure the app is using the local `/mateza-api` proxy path.
 - If Mateza returns `404` or `401`, the client key or project ID is probably invalid for the configured API host.
+- If Vite preview blocks the deployment host, add it to `preview.allowedHosts` in [`vite.config.js`](./vite.config.js).
 - After changing `vite.config.js`, restart `pnpm dev`.

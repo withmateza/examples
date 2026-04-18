@@ -21,6 +21,9 @@ export default defineConfig(({ mode }) => {
 
   return {
     server: { proxy },
-    preview: { proxy },
+    preview: {
+      proxy,
+      allowedHosts: ['demo-html.mateza.us'],
+    },
   }
 })
