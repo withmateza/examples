@@ -1,60 +1,202 @@
+import { createWebsiteTranslator } from '@withmateza/website'
 import './style.css'
-import javascriptLogo from './assets/javascript.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import { setupCounter } from './counter.js'
 
-document.querySelector('#app').innerHTML = `
-<section id="center">
-  <div class="hero">
-    <img src="${heroImg}" class="base" width="170" height="179">
-    <img src="${javascriptLogo}" class="framework" alt="JavaScript logo"/>
-    <img src=${viteLogo} class="vite" alt="Vite logo" />
-  </div>
-  <div>
-    <h1>Get started</h1>
-    <p>Edit <code>src/main.js</code> and save to test <code>HMR</code></p>
-  </div>
-  <button id="counter" type="button" class="counter"></button>
-</section>
+const app = document.querySelector('#app')
+const apiHost = import.meta.env.VITE_MATEZA_BASE_URL?.trim() ?? ''
+const clientKey = import.meta.env.VITE_MATEZA_CLIENT_KEY?.trim() ?? ''
+const projectId = import.meta.env.VITE_MATEZA_PROJECT_ID?.trim() ?? ''
+const sourceLang = 'en'
+const targetLang = 'rw'
+const isLocalPreview = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname)
+const baseUrl = isLocalPreview ? '/mateza-api' : apiHost
 
-<div class="ticks"></div>
+app.innerHTML = `
+  <div class="shell">
+    <header class="toolbar">
+      <div>
+        <p class="eyebrow">Mateza website demo</p>
+        <h1>Translate English to Kinyarwanda.</h1>
+      </div>
 
-<section id="next-steps">
-  <div id="docs">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#documentation-icon"></use></svg>
-    <h2>Documentation</h2>
-    <p>Your questions, answered</p>
-    <ul>
-      <li>
-        <a href="https://vite.dev/" target="_blank">
-          <img class="logo" src=${viteLogo} alt="" />
-          Explore Vite
-        </a>
-      </li>
-      <li>
-        <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
-          <img class="button-icon" src="${javascriptLogo}" alt="">
-          Learn more
-        </a>
-      </li>
-    </ul>
-  </div>
-  <div id="social">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#social-icon"></use></svg>
-    <h2>Connect with us</h2>
-    <p>Join the Vite community</p>
-    <ul>
-      <li><a href="https://github.com/vitejs/vite" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#github-icon"></use></svg>GitHub</a></li>
-      <li><a href="https://chat.vite.dev/" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#discord-icon"></use></svg>Discord</a></li>
-      <li><a href="https://x.com/vite_js" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#x-icon"></use></svg>X.com</a></li>
-      <li><a href="https://bsky.app/profile/vite.dev" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#bluesky-icon"></use></svg>Bluesky</a></li>
-    </ul>
-  </div>
-</section>
+      <div class="controls">
+        <button id="translate-btn" type="button">Translate to Kinyarwanda</button>
+      </div>
+    </header>
 
-<div class="ticks"></div>
-<section id="spacer"></section>
+    <section class="status-row" aria-live="polite">
+      <span class="status-dot" aria-hidden="true"></span>
+      <p id="mateza-status">Click Translate to switch the page into Kinyarwanda.</p>
+    </section>
+
+    <main id="site-root" class="site-root">
+      <section class="hero">
+        <h2>English content preview</h2>
+        <p class="lede">
+          This area is the part that Mateza translates. The controls above stay in place so you can
+          switch between English and Kinyarwanda without losing the button.
+        </p>
+      </section>
+
+      <section class="detail-grid" aria-label="Configuration details">
+        <article class="panel">
+          <h3>Required env vars</h3>
+          <ul>
+            <li><code>VITE_MATEZA_BASE_URL</code></li>
+            <li><code>VITE_MATEZA_CLIENT_KEY</code></li>
+            <li><code>VITE_MATEZA_PROJECT_ID</code></li>
+          </ul>
+        </article>
+
+        <article class="panel">
+          <h3>Supported source</h3>
+          <p><code>${sourceLang}</code> is the page source language.</p>
+        </article>
+      </section>
+    </main>
+  </div>
 `
 
-setupCounter(document.querySelector('#counter'))
+const statusNode = document.querySelector('#mateza-status')
+const buttonNode = document.querySelector('#translate-btn')
+const siteRoot = document.querySelector('#site-root')
+const initialSiteHtml = siteRoot?.innerHTML ?? ''
+const missing = []
+
+if (!apiHost) missing.push('VITE_MATEZA_BASE_URL')
+if (!clientKey) missing.push('VITE_MATEZA_CLIENT_KEY')
+if (!projectId) missing.push('VITE_MATEZA_PROJECT_ID')
+
+function getLanguageLabel(code) {
+  return code === 'rw' ? 'Kinyarwanda' : code
+}
+
+function restoreEnglish() {
+  if (siteRoot) {
+    siteRoot.innerHTML = initialSiteHtml
+  }
+}
+
+function setStatus(message) {
+  if (statusNode) {
+    statusNode.textContent = message
+  }
+}
+
+function setButtonLabel(mode) {
+  if (!buttonNode) {
+    return
+  }
+
+  buttonNode.textContent = mode === 'translated' ? 'Reset to English' : 'Translate to Kinyarwanda'
+}
+
+function collectTextNodes(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+  const nodes = []
+
+  while (walker.nextNode()) {
+    const node = walker.currentNode
+    if (node?.nodeValue?.trim()) {
+      const parent = node.parentElement
+      if (!parent) {
+        continue
+      }
+
+      const tagName = parent.tagName.toLowerCase()
+      if (['script', 'style', 'code', 'pre'].includes(tagName)) {
+        continue
+      }
+
+      if (parent.closest('[data-no-translate]') || parent.closest('button, select, option')) {
+        continue
+      }
+
+      nodes.push(node)
+    }
+  }
+
+  return nodes
+}
+
+async function translateTo(targetLang) {
+  if (!siteRoot) {
+    return false
+  }
+
+  restoreEnglish()
+
+  if (targetLang === sourceLang) {
+    setStatus('Showing the original English page.')
+    return true
+  }
+
+  const translator = createWebsiteTranslator({
+    baseUrl,
+    clientKey,
+    projectId,
+    siteId: 'vite-html',
+    sourceLang,
+    targetLang,
+  })
+
+  try {
+    const textNodes = collectTextNodes(siteRoot)
+    for (const node of textNodes) {
+      const original = node.nodeValue ?? ''
+      const translated = await translator.translateText(original, { glossarySensitive: true })
+      node.nodeValue = translated
+    }
+
+    setStatus(`Translated the page to ${getLanguageLabel(targetLang)}.`)
+    return true
+  } catch (error) {
+    restoreEnglish()
+    const statusCode = typeof error === 'object' && error && 'statusCode' in error ? Number(error.statusCode) : 0
+    if (statusCode === 404) {
+      setStatus('Mateza returned 404. Your browser client key does not match a live project on the API host.')
+      if (buttonNode) {
+        buttonNode.disabled = true
+      }
+    } else {
+      setStatus(`Translation failed for ${getLanguageLabel(targetLang)}. Check the API proxy and credentials.`)
+    }
+    console.error('[Mateza] Translation failed', error)
+    return false
+  }
+}
+
+if (missing.length > 0) {
+  const message = `Mateza is not configured. Missing: ${missing.join(', ')}.`
+  setStatus(message)
+
+  if (buttonNode) {
+    buttonNode.disabled = true
+  }
+
+  console.warn(`[Mateza] ${message} Skipping translator mount.`)
+} else {
+  let translated = false
+  setButtonLabel('english')
+
+  buttonNode?.addEventListener('click', async () => {
+    if (translated) {
+      restoreEnglish()
+      translated = false
+      setButtonLabel('english')
+      setStatus('Showing the original English page.')
+      return
+    }
+
+    const success = await translateTo(targetLang)
+    translated = success
+    setButtonLabel(success ? 'translated' : 'english')
+  })
+
+  setStatus('Click Translate to switch the page into Kinyarwanda.')
+
+  if (import.meta.hot) {
+    import.meta.hot.dispose(() => {
+      restoreEnglish()
+    })
+  }
+}
