@@ -34,6 +34,6 @@ ENV VITE_MATEZA_PROJECT_ID=$VITE_MATEZA_PROJECT_ID
 
 COPY --from=build /app/vite-html ./
 
-EXPOSE 4173
+EXPOSE 3000
 
-CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "4173"]
+CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "3000"]

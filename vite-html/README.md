@@ -49,10 +49,10 @@ docker build \
   --build-arg VITE_MATEZA_PROJECT_ID=your_project_id \
   .
 
-docker run --rm -p 4173:4173 mateza-vite-html
+docker run --rm -p 3000:3000 mateza-vite-html
 ```
 
-Open `http://localhost:4173` after the container starts.
+Open `http://localhost:3000` after the container starts.
 
 ## Vite proxy
 
