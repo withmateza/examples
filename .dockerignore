@@ -1,0 +1,8 @@
+.git
+vite-html/node_modules
+vite-html/dist
+vite-html/.env
+vite-html/.env.local
+vite-html/.env.*.local
+vite-html/.DS_Store
+*.log

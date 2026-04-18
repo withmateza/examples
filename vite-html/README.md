@@ -38,11 +38,12 @@ pnpm dev
 
 ## Docker
 
-Build and run the app in a container with the Mateza credentials passed at build time:
+From the repository root, build and run the app in a container with the Mateza credentials passed at build time:
 
 ```bash
 docker build \
   -t mateza-vite-html \
+  -f vite-html/Dockerfile \
   --build-arg VITE_MATEZA_BASE_URL=https://api.mateza.us \
   --build-arg VITE_MATEZA_CLIENT_KEY=your_browser_client_key \
   --build-arg VITE_MATEZA_PROJECT_ID=your_project_id \
